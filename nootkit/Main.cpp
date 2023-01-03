@@ -39,7 +39,7 @@ DriverEntry(
     UNICODE_STRING dosName = RTL_CONSTANT_STRING(L"\\DosDevices\\noot");
     PDEVICE_OBJECT devObj;
 
-    NTSTATUS res = IoCreateDevice(DriverObject, 0, &devName, FILE_DEVICE_UNKNOWN, FILE_DEVICE_SECURE_OPEN, FALSE, &devObj);
+    NTSTATUS res = IoCreateDevice(DriverObject, 0, &devName, FILE_DEVICE_UNKNOWN, 0, FALSE, &devObj);
 
     if (!NT_SUCCESS(res)) { Util::handleError(res, "IoCreateDevice, Status code: "); return res; }
 
@@ -61,8 +61,6 @@ NTSTATUS IoctlHandler(PDEVICE_OBJECT devObj, PIRP irp) {
     PIO_STACK_LOCATION irpSp;
     NTSTATUS ntStatus = STATUS_SUCCESS;
     ULONG inBufLen;
-    //ULONG outBufLen;
-    //PMDL mdl = NULL;
 
     UNREFERENCED_PARAMETER(devObj);
     irpSp = IoGetCurrentIrpStackLocation(irp);
